@@ -1,0 +1,14 @@
+services:
+  luckfox-dev:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    container_name: luckfox-env
+    volumes:
+      - .:/workspaces/rv1103-dev
+      - /dev/bus/usb:/dev/bus/usb
+    # Keep the container running in the background
+    tty: true
+    stdin_open: true
+    privileged: true
+    network_mode: host

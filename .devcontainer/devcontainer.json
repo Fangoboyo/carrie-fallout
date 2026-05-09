@@ -1,0 +1,20 @@
+{
+    "name": "Luckfox Pico Dev",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "luckfox-dev",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-vscode.cmake-tools",
+                "twxs.cmake"
+            ]
+        },
+        "antigravity": {
+            "agentContext": "container",
+            "capabilities": ["shell", "filesystem", "network"]
+        }
+    },
+    "workspaceFolder": "/workspaces/rv1103-dev",
+    "postStartCommand": "arm-rockchip830-linux-uclibcgnueabihf-gcc main.c -o hello_luckfox"
+}
