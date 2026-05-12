@@ -1,0 +1,4 @@
+*.lck
+*.tmp
+*-bak
+_autosave-*
