@@ -63,7 +63,7 @@ typedef struct {
     .vi_pipe      = 0,             \
     .vi_chn       = 0,             \
     .venc_chn     = 0,             \
-    .output_path  = "/tmp/recording.h264", \
+    .output_path  = "/mnt/sdcard/DCIM/Development/recording.h264", \
 }
 
 /* ── Public API ──────────────────────────────────────────────────── */

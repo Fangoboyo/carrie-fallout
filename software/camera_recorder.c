@@ -28,6 +28,8 @@
 #include "rk_mpi_sys.h"
 #include "rk_mpi_vi.h"
 #include "rk_mpi_venc.h"
+#include "sample_comm_isp.h"
+#include "rk_mpi_mb.h"
 #include "rk_type.h"
 #include "rk_comm_video.h"
 #include "rk_comm_venc.h"
@@ -66,12 +68,15 @@ static void *writer_thread(void *arg)
 {
     (void)arg;
     const int timeout_ms = 500;
-    VENC_STREAM_S stream;
-    memset(&stream, 0, sizeof(stream));
-
     LOG_INF("writer thread started (chn=%d)", g_cfg.venc_chn);
 
     while (atomic_load(&g_running)) {
+        VENC_STREAM_S stream;
+        VENC_PACK_S   packs[8];
+        memset(&stream, 0, sizeof(stream));
+        memset(packs, 0, sizeof(packs));
+        stream.pstPack = packs;
+
         RK_S32 ret = RK_MPI_VENC_GetStream(g_cfg.venc_chn, &stream, timeout_ms);
         if (ret == RK_ERR_VENC_BUF_EMPTY) {
             /* No frame ready yet — loop and try again */
@@ -85,8 +90,16 @@ static void *writer_thread(void *arg)
         /* Write all NAL units in this stream packet to the output file */
         for (RK_U32 i = 0; i < stream.u32PackCount; i++) {
             VENC_PACK_S *pack = &stream.pstPack[i];
-            if (pack->u32Len > 0 && pack->pData != NULL) {
-                fwrite(pack->pData, 1, pack->u32Len, g_out_file);
+            void *data = RK_MPI_MB_Handle2VirAddr(pack->pMbBlk);
+            printf("[recorder] packet %d: pMbBlk=%p, data=%p, offset=%u, len=%u\n", 
+                   i, pack->pMbBlk, data, pack->u32Offset, pack->u32Len);
+            if (pack->u32Len > 0 && data != NULL) {
+                /* 
+                 * Rockchip's RKMPI driver uses IOMMU to map the ring buffer contiguously 
+                 * in virtual memory, so wrap-around handling is NOT needed.
+                 * `data` is already offset to the correct packet payload!
+                 */
+                fwrite(data, 1, pack->u32Len, g_out_file);
             }
         }
 
@@ -108,16 +121,31 @@ static int setup_vi(const RecorderConfig *cfg)
     ret = RK_MPI_VI_EnableDev(cfg->vi_pipe);
     CHECK_RET(ret, "RK_MPI_VI_EnableDev");
 
+    /* Bind the VI pipe to the device */
+    VI_DEV_BIND_PIPE_S bind_pipe;
+    memset(&bind_pipe, 0, sizeof(bind_pipe));
+    bind_pipe.u32Num = 1;
+    bind_pipe.PipeId[0] = cfg->vi_pipe;
+    ret = RK_MPI_VI_SetDevBindPipe(cfg->vi_pipe, &bind_pipe);
+    CHECK_RET(ret, "RK_MPI_VI_SetDevBindPipe");
+
     /* Configure VI channel attributes */
     VI_CHN_ATTR_S vi_attr;
     memset(&vi_attr, 0, sizeof(vi_attr));
-    vi_attr.stIspOpt.u32BufCount     = 3;            /* triple-buffer */
+    vi_attr.stIspOpt.u32BufCount     = 2;            /* double-buffer to save CMA memory */
     vi_attr.stIspOpt.enMemoryType    = VI_V4L2_MEMORY_TYPE_MMAP;
+    vi_attr.stIspOpt.enCaptureType   = VI_V4L2_CAPTURE_TYPE_VIDEO_CAPTURE_MPLANE;
+    vi_attr.stIspOpt.stMaxSize.u32Width = cfg->width;
+    vi_attr.stIspOpt.stMaxSize.u32Height = cfg->height;
+    snprintf(vi_attr.stIspOpt.aEntityName, sizeof(vi_attr.stIspOpt.aEntityName), 
+             "rkisp_mainpath");
+
     vi_attr.stSize.u32Width           = cfg->width;
     vi_attr.stSize.u32Height          = cfg->height;
     vi_attr.enPixelFormat             = RK_FMT_YUV420SP; /* NV12 */
     vi_attr.enCompressMode            = COMPRESS_MODE_NONE;
-    vi_attr.f32FrameRate              = (float)cfg->fps;
+    vi_attr.stFrameRate.s32SrcFrameRate = cfg->fps;
+    vi_attr.stFrameRate.s32DstFrameRate = cfg->fps;
 
     ret = RK_MPI_VI_SetChnAttr(cfg->vi_pipe, cfg->vi_chn, &vi_attr);
     CHECK_RET(ret, "RK_MPI_VI_SetChnAttr");
@@ -146,7 +174,8 @@ static int setup_venc(const RecorderConfig *cfg)
         venc_attr.stRcAttr.enRcMode = VENC_RC_MODE_H265CBR;
         venc_attr.stRcAttr.stH265Cbr.u32Gop         = cfg->fps * 2;
         venc_attr.stRcAttr.stH265Cbr.u32BitRate      = cfg->bitrate_kbps * 1000;
-        venc_attr.stRcAttr.stH265Cbr.fr32DstFrameRate = (float)cfg->fps;
+        venc_attr.stRcAttr.stH265Cbr.fr32DstFrameRateNum = cfg->fps;
+        venc_attr.stRcAttr.stH265Cbr.fr32DstFrameRateDen = 1;
         venc_attr.stRcAttr.stH265Cbr.u32SrcFrameRateNum = cfg->fps;
         venc_attr.stRcAttr.stH265Cbr.u32SrcFrameRateDen = 1;
     } else {
@@ -155,7 +184,8 @@ static int setup_venc(const RecorderConfig *cfg)
         venc_attr.stRcAttr.enRcMode = VENC_RC_MODE_H264CBR;
         venc_attr.stRcAttr.stH264Cbr.u32Gop          = cfg->fps * 2;
         venc_attr.stRcAttr.stH264Cbr.u32BitRate       = cfg->bitrate_kbps * 1000;
-        venc_attr.stRcAttr.stH264Cbr.fr32DstFrameRate = (float)cfg->fps;
+        venc_attr.stRcAttr.stH264Cbr.fr32DstFrameRateNum = cfg->fps;
+        venc_attr.stRcAttr.stH264Cbr.fr32DstFrameRateDen = 1;
         venc_attr.stRcAttr.stH264Cbr.u32SrcFrameRateNum = cfg->fps;
         venc_attr.stRcAttr.stH264Cbr.u32SrcFrameRateDen = 1;
     }
@@ -164,8 +194,9 @@ static int setup_venc(const RecorderConfig *cfg)
     venc_attr.stVencAttr.u32PicHeight   = cfg->height;
     venc_attr.stVencAttr.u32VirWidth    = cfg->width;
     venc_attr.stVencAttr.u32VirHeight   = cfg->height;
-    venc_attr.stVencAttr.u32StreamBufCnt = 4;
-    venc_attr.stVencAttr.u32BufSize     = cfg->width * cfg->height * 3 / 2;
+    venc_attr.stVencAttr.u32StreamBufCnt = 2;
+    /* Limit bitstream buffer to 1MB to prevent CMA Out-Of-Memory when ISP is running */
+    venc_attr.stVencAttr.u32BufSize     = 1024 * 1024;
     venc_attr.stVencAttr.enPixelFormat  = RK_FMT_YUV420SP;
 
     ret = RK_MPI_VENC_CreateChn(cfg->venc_chn, &venc_attr);
@@ -175,8 +206,8 @@ static int setup_venc(const RecorderConfig *cfg)
     VENC_RECV_PIC_PARAM_S recv_param;
     memset(&recv_param, 0, sizeof(recv_param));
     recv_param.s32RecvPicNum = -1;   /* -1 = unlimited */
-    ret = RK_MPI_VENC_StartRecv(cfg->venc_chn, &recv_param);
-    CHECK_RET(ret, "RK_MPI_VENC_StartRecv");
+    ret = RK_MPI_VENC_StartRecvFrame(cfg->venc_chn, &recv_param);
+    CHECK_RET(ret, "RK_MPI_VENC_StartRecvFrame");
 
     LOG_INF("VENC ready: %s %u kbps (chn=%d)",
             cfg->codec == REC_CODEC_H265 ? "H.265" : "H.264",
@@ -233,8 +264,18 @@ int recorder_start(const RecorderConfig *cfg)
         goto err_file;
     }
 
-    /* Bring up VI, VENC, then wire them together */
-    if (setup_vi(cfg)    < 0) goto err_sys;
+    /* Bring up ISP, VI, VENC, then wire them together */
+    /* Initialize ISP so we don't get yellow/corrupted image without tuning */
+    if (SAMPLE_COMM_ISP_Init(0, 0, 0, "/etc/iqfiles/") != 0) {
+        LOG_ERR("SAMPLE_COMM_ISP_Init failed");
+        goto err_sys;
+    }
+    if (SAMPLE_COMM_ISP_Run(0) != 0) {
+        LOG_ERR("SAMPLE_COMM_ISP_Run failed");
+        goto err_isp_init;
+    }
+
+    if (setup_vi(cfg)    < 0) goto err_isp;
     if (setup_venc(cfg)  < 0) goto err_vi;
     if (bind_vi_to_venc(cfg) < 0) goto err_venc;
 
@@ -254,11 +295,14 @@ int recorder_start(const RecorderConfig *cfg)
 err_bind:
     unbind_vi_from_venc(cfg);
 err_venc:
-    RK_MPI_VENC_StopRecv(cfg->venc_chn);
+    RK_MPI_VENC_StopRecvFrame(cfg->venc_chn);
     RK_MPI_VENC_DestroyChn(cfg->venc_chn);
 err_vi:
     RK_MPI_VI_DisableChn(cfg->vi_pipe, cfg->vi_chn);
     RK_MPI_VI_DisableDev(cfg->vi_pipe);
+err_isp:
+    SAMPLE_COMM_ISP_Stop(0);
+err_isp_init:
 err_sys:
     RK_MPI_SYS_Exit();
 err_file:
@@ -283,7 +327,7 @@ void recorder_stop(void)
     /* Tear down MPI pipeline in reverse order */
     unbind_vi_from_venc(&g_cfg);
 
-    RK_MPI_VENC_StopRecv(g_cfg.venc_chn);
+    RK_MPI_VENC_StopRecvFrame(g_cfg.venc_chn);
     RK_MPI_VENC_DestroyChn(g_cfg.venc_chn);
 
     RK_MPI_VI_DisableChn(g_cfg.vi_pipe, g_cfg.vi_chn);

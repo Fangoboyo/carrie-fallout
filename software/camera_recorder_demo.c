@@ -12,10 +12,6 @@
  *   /root/camera_recorder_demo [output_file] [duration_seconds]
  *   /root/camera_recorder_demo /tmp/clip.h264 15
  *
- * Play back on a PC:
- *   ffplay -i clip.h264
- *   # or convert to MP4:
- *   ffmpeg -i clip.h264 -c copy clip.mp4
  */
 
 #include <stdio.h>
@@ -31,7 +27,7 @@ static void on_signal(int sig) { (void)sig; g_quit = 1; }
 
 int main(int argc, char *argv[])
 {
-    const char *output  = (argc > 1) ? argv[1] : "/tmp/recording.h264";
+    const char *output  = (argc > 1) ? argv[1] : "/mnt/sdcard/DCIM/Development/recording.h264";
     int         seconds = (argc > 2) ? atoi(argv[2]) : 10;
 
     signal(SIGINT,  on_signal);

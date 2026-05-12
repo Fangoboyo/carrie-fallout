@@ -1,0 +1,36 @@
+{
+    "configurations": [
+        {
+            "name": "Luckfox RV1103",
+            "compileCommands": "${workspaceFolder}/compile_commands.json",
+            "compilerPath": "/opt/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc",
+            "cStandard": "c11",
+            "intelliSenseMode": "linux-gcc-arm",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/opt/luckfox-rkmpi/include/**",
+                "/opt/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include",
+                "/opt/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include-fixed",
+                "/opt/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/include",
+                "/opt/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include"
+            ],
+            "defines": [
+                "__arm__",
+                "__ARM_ARCH=7",
+                "__ARM_ARCH_7A__",
+                "__ARM_PCS_VFP",
+                "__linux__"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "/opt/luckfox-rkmpi/include",
+                    "/opt/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include",
+                    "/opt/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include"
+                ],
+                "limitSymbolsToIncludedHeaders": false
+            }
+        }
+    ],
+    "version": 4
+}

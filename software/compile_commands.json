@@ -1,0 +1,17 @@
+[
+  {
+    "directory": "/workspaces/rv1103-dev",
+    "command": "arm-rockchip830-linux-uclibcgnueabihf-gcc -I/workspaces/rv1103-dev -I/opt/luckfox-rkmpi/include -c camera_recorder.c",
+    "file": "camera_recorder.c"
+  },
+  {
+    "directory": "/workspaces/rv1103-dev",
+    "command": "arm-rockchip830-linux-uclibcgnueabihf-gcc -I/workspaces/rv1103-dev -I/opt/luckfox-rkmpi/include -c camera_recorder_demo.c",
+    "file": "camera_recorder_demo.c"
+  },
+  {
+    "directory": "/workspaces/rv1103-dev",
+    "command": "arm-rockchip830-linux-uclibcgnueabihf-gcc -I/workspaces/rv1103-dev -c gpio_input.c",
+    "file": "gpio_input.c"
+  }
+]

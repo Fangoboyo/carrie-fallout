@@ -7,7 +7,9 @@
             "extensions": [
                 "ms-vscode.cpptools",
                 "ms-vscode.cmake-tools",
-                "twxs.cmake"
+                "twxs.cmake",
+                "llvm-vs-code-extensions.vscode-clangd",
+                "KylinIdeTeam.kylin-clangd"
             ]
         },
         "antigravity": {
@@ -15,6 +17,5 @@
             "capabilities": ["shell", "filesystem", "network"]
         }
     },
-    "workspaceFolder": "/workspaces/rv1103-dev",
-    "postStartCommand": "arm-rockchip830-linux-uclibcgnueabihf-gcc main.c -o hello_luckfox"
+    "workspaceFolder": "/workspaces/rv1103-dev"
 }

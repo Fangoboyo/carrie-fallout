@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     coreutils \
     adb \
     ca-certificates \
+    clangd \
     && rm -rf /var/lib/apt/lists/* \
     && chmod 1777 /tmp
 

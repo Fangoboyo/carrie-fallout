@@ -1,0 +1,30 @@
+{
+    // ── Kylin Clangd (replaces cpptools IntelliSense) ────────────────────────
+    // KylinIdeTeam.kylin-clangd bundles its own clangd binary, so no path needed.
+    // Cross-compilation flags (--target, --sysroot) live in .clangd config file.
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}",
+        "--background-index",
+        "--background-index-priority=low",
+        "--completion-style=detailed",
+        "--header-insertion=never",
+        "--log=verbose"
+    ],
+
+    // ── Disable cpptools IntelliSense engine ─────────────────────────────────
+    // cpptools won't start its backend in non-Microsoft editors; keep the
+    // extension installed for debugging (gdb) support only.
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "C_Cpp.autocomplete": "disabled",
+    "C_Cpp.errorSquiggles": "disabled",
+    "C_Cpp.hover": "disabled",
+
+    // ── File watcher exclusions ──────────────────────────────────────────────
+    // Prevent VS Code from watching the entire 1GB+ toolchain tree.
+    "files.watcherExclude": {
+        "/opt/**": true
+    },
+    "search.exclude": {
+        "/opt/**": true
+    }
+}

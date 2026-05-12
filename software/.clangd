@@ -1,0 +1,21 @@
+CompileFlags:
+  # clangd uses its own x86_64 Clang frontend but needs these flags to
+  # correctly resolve ARM cross-compilation headers from the sysroot.
+  Add:
+    - --target=arm-linux-gnueabihf
+    - --sysroot=/opt/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot
+    - -I/opt/luckfox-rkmpi/include
+    - -I/opt/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include
+    - -I/opt/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include
+  # Strip the cross-compiler binary name so clangd uses its own frontend
+  # (clangd cannot execute arm-rockchip830-linux-uclibcgnueabihf-gcc)
+  CompilationDatabase: /workspaces/rv1103-dev
+
+Diagnostics:
+  # Don't flag missing features for the cross-compiled target
+  UnusedIncludes: Strict
+  # Suppress noisy warnings from system headers
+  SystemHeaders: false
+
+Index:
+  Background: Build
