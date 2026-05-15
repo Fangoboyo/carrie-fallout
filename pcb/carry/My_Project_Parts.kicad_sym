@@ -109,7 +109,7 @@
 					)
 				)
 			)
-			(pin output line
+			(pin power_out line
 				(at -15.24 -5.08 0)
 				(length 2.54)
 				(name "VCC_3V3"
