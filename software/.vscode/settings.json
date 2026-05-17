@@ -5,7 +5,6 @@
     "clangd.arguments": [
         "--compile-commands-dir=${workspaceFolder}",
         "--background-index",
-        "--background-index-priority=low",
         "--completion-style=detailed",
         "--header-insertion=never",
         "--log=verbose"

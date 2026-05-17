@@ -12,6 +12,7 @@ TARGET="${1:-main}"
 
 case "${TARGET}" in
   recorder)
+    cd recorder
     echo "[build] Compiling camera_recorder_demo (RKMPI 1080p H.264)..."
     ${TOOLCHAIN} \
       -I"${ROCKIT_INC}" \
@@ -35,11 +36,22 @@ case "${TARGET}" in
     ;;
 
   gpio)
+    cd gpio
     echo "[build] Compiling gpio_input (digital GPIO reader)..."
-    ${TOOLCHAIN} gpio_input.c -o gpio_input
+    ${TOOLCHAIN} gpio_input.c gpio.c -o gpio_input
     adb -H host.docker.internal push gpio_input /root/
     adb -H host.docker.internal shell "chmod +x /root/gpio_input && /root/gpio_input"
     rm gpio_input
+    ;;
+
+  main)
+    echo "[build] Compiling main (RKMPI 1080p H.264)..."
+    ${TOOLCHAIN} main.c -o main
+
+    adb -H host.docker.internal push main /root/
+    adb -H host.docker.internal shell "chmod +x /root/main"
+    rm main
+    echo "[build] Pushed. Run on board:  adb shell /root/main"
     ;;
 
   *)
