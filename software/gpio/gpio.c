@@ -1,3 +1,10 @@
+/*
+ * Project Abbreviations:
+ * - RKMPI: Rockchip Media Process Interface. An API used for multimedia processing (e.g., video encoding/decoding) on Rockchip processors.
+ * - RKAIQ: Rockchip AI Image Quality. An Image Signal Processing (ISP) framework for tuning and image enhancement on Rockchip camera platforms.
+ * - RV1103: A low-power, high-performance Vision SoC (System-on-Chip) from Rockchip designed for IP cameras, featuring an integrated NPU and ISP.
+ */
+
 #include "gpio.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,6 +71,7 @@ int gpio_read(int gpio)
     snprintf(path, sizeof(path), GPIO_ROOT "/gpio%d/value", gpio);
     FILE *f = fopen(path, "r");
     if (!f) { perror("  [!] read value"); return -1; }
+    
     int v = -1;
     fscanf(f, "%d", &v);
     fclose(f);
