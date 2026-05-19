@@ -146,14 +146,20 @@ serve({
     }
 
     // --- Static File Serving ---
-    const publicPath = process.cwd() + "/public";
-    if (url.pathname === "/") {
-      return new Response(Bun.file(publicPath + "/index.html"));
-    }
+    const publicPath = process.cwd() + "/client/dist";
     
-    const file = Bun.file(publicPath + url.pathname);
+    // Serve file if it exists, otherwise fallback to index.html
+    const filePath = url.pathname === "/" ? "/index.html" : url.pathname;
+    const file = Bun.file(publicPath + filePath);
+    
     if (await file.exists()) {
       return new Response(file);
+    }
+
+    // SPA Fallback
+    const indexFile = Bun.file(publicPath + "/index.html");
+    if (await indexFile.exists()) {
+      return new Response(indexFile);
     }
 
     return new Response("Not Found", { status: 404 });
