@@ -46,25 +46,7 @@ int main() {
   int is_recording = 0;
 
   /* Continuous polling */
-  while (1) {
-    printf("\r  Recording state: %d, Previous val: %d", is_recording, previous_state);
-    int input = gpio_read(button_gpio);
-    
-
-    if (previous_state == 1 && input == 0) {
-      is_recording = !is_recording;
-
-      if (is_recording) {
-        recorder_start(&cfg);
-      } else {
-        recorder_stop();
-      }
-    }
-
-    usleep(POLL_MS * 1000);
-    previous_state = input;
-    fflush(stdout);
-  }
+ 
 
   printf("\nCleaning up...\n");
   gpio_unexport(button_gpio);
