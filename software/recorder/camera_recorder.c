@@ -14,6 +14,13 @@
  * and exits cleanly when g_running is cleared by recorder_stop().
  */
 
+/*
+ * Project Abbreviations:
+ * - RKMPI: Rockchip Media Process Interface. An API used for multimedia processing (e.g., video encoding/decoding) on Rockchip processors.
+ * - RKAIQ: Rockchip AI Image Quality. An Image Signal Processing (ISP) framework for tuning and image enhancement on Rockchip camera platforms.
+ * - RV1103: A low-power, high-performance Vision SoC (System-on-Chip) from Rockchip designed for IP cameras, featuring an integrated NPU and ISP.
+ */
+
 #include "camera_recorder.h"
 
 #include <stdio.h>

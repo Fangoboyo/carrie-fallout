@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+#include "gpio.h"
 
 /* ── Poll interval ─────────────────────────────────────────────── */
 #define POLL_MS  250          /* milliseconds between reads        */
@@ -69,69 +70,6 @@ static const PinEntry PINS[] = {
 static volatile int keep_running = 1;
 static void handle_sigint(int sig) { (void)sig; keep_running = 0; }
 
-/* ── sysfs helpers ───────────────────────────────────────────── */
-static int sysfs_write(const char *path, const char *value)
-{
-    FILE *f = fopen(path, "w");
-    if (!f) {
-        fprintf(stderr, "  [!] Cannot open '%s': %s\n", path, strerror(errno));
-        return -1;
-    }
-    fprintf(f, "%s", value);
-    fclose(f);
-    return 0;
-}
-
-static int gpio_export(int gpio)
-{
-    char dir[80];
-    snprintf(dir, sizeof(dir), GPIO_ROOT "/gpio%d", gpio);
-    if (access(dir, F_OK) == 0) return 0;   /* already exported */
-
-    char buf[16];
-    snprintf(buf, sizeof(buf), "%d", gpio);
-    if (sysfs_write(GPIO_ROOT "/export", buf) < 0) {
-        fprintf(stderr, "  [!] Export failed — is gpio%d valid on this kernel?\n", gpio);
-        return -1;
-    }
-    return 0;
-}
-
-static void gpio_unexport(int gpio)
-{
-    char buf[16];
-    snprintf(buf, sizeof(buf), "%d", gpio);
-    sysfs_write(GPIO_ROOT "/unexport", buf);
-}
-
-static int gpio_set_input(int gpio)
-{
-    char path[80];
-    snprintf(path, sizeof(path), GPIO_ROOT "/gpio%d/direction", gpio);
-
-    /* Wait up to 200 ms for the directory to appear after export */
-    for (int i = 0; i < 10; i++) {
-        if (access(path, F_OK) == 0) break;
-        usleep(20000);
-    }
-    if (sysfs_write(path, "in") < 0) {
-        fprintf(stderr, "  [!] Could not set gpio%d direction to 'in'\n", gpio);
-        return -1;
-    }
-    return 0;
-}
-
-static int gpio_read(int gpio)
-{
-    char path[80];
-    snprintf(path, sizeof(path), GPIO_ROOT "/gpio%d/value", gpio);
-    FILE *f = fopen(path, "r");
-    if (!f) { perror("  [!] read value"); return -1; }
-    int v = -1;
-    fscanf(f, "%d", &v);
-    fclose(f);
-    return v;
-}
 
 /* ── UI helpers ─────────────────────────────────────────────── */
 

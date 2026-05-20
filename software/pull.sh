@@ -1,1 +1,2 @@
-adb -H host.docker.internal pull /mnt/sdcard/DCIM/Development/recording.h264 ./recording.h264
+adb pull /mnt/sdcard/DCIM/Development/recording.h264 ./recording.h264
+rm ./recording.h264
